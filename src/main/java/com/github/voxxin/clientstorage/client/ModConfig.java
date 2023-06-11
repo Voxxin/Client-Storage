@@ -5,9 +5,9 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 
 import java.io.File;
 import java.io.FileReader;
@@ -87,7 +87,7 @@ public class ModConfig {
 
         blockLoc.add("location", blockLocation);
         blockLoc.addProperty("type", block.getTranslationKey());
-        blockLoc.addProperty("item", String.valueOf(Registry.ITEM.getId(heldItem.getItem())));
+        blockLoc.addProperty("item", String.valueOf(Registries.ITEM.getId(heldItem.getItem())));
 
         if (dimensionArray.contains(blockLoc)) return;
 
@@ -165,7 +165,7 @@ public class ModConfig {
             JsonArray locationArray = blockPosObj.get("location").getAsJsonArray();
 
             if (blockLocation.equals(locationArray) && itemStack == null) {
-                Item item = Registry.ITEM.get(Identifier.tryParse(blockPosObj.get("item").getAsString())).asItem();
+                Item item = Registries.ITEM.get(Identifier.tryParse(blockPosObj.get("item").getAsString())).asItem();
                 itemStack = new ItemStack(item);
             }
         }

@@ -8,8 +8,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.registry.Registry;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,10 +21,8 @@ import static com.github.voxxin.clientstorage.client.ClientHandler.lastDrawnPos;
 @Mixin(InGameHud.class)
 public abstract class HudMixin {
 
-    @Invoker("renderHotbarItem")
-    public abstract void invokeRenderHotbarItem(
-            int x, int y, float tickDelta, PlayerEntity player, ItemStack stack, int seed
-    );
+    @Shadow
+    abstract void renderHotbarItem(MatrixStack matrixStack, int i, int j, float f, PlayerEntity playerEntity, ItemStack itemStack, int k);
 
     @Inject(at = @At("HEAD"), method = "render")
     private void renderer(MatrixStack matrices, float tickDelta, CallbackInfo ci) {
@@ -51,7 +49,7 @@ public abstract class HudMixin {
             int yPos = screenHeight / 2 - 8;
             yPos = yPos - 16;
 
-            invokeRenderHotbarItem(xPos, yPos, tickDelta, minecraftInstance.player, item, 1 + 2);
+            renderHotbarItem(matrices, xPos, yPos, tickDelta, minecraftInstance.player, item, 1 + 2);
         }
     }
 }
