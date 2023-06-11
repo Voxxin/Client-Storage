@@ -20,24 +20,25 @@ import static com.github.voxxin.clientstorage.client.ClientStorageClient.*;
 
 public class ModConfig {
     private static final File clientStorageDir = FabricLoader.getInstance().getConfigDir().resolve("client-storage").toFile();
-    private static File serverSideDir = new File(clientStorageDir, "multiPlayer");
-    private static File serverWorldDir = new File(serverSideDir, ClientStorageClient.SERVER_IP);
-    private static File locationsFile = new File(serverWorldDir, "locations.json");
+    private static File locationsFile = null;
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     private static void isOrAddDir() {
+        File serverSideDir = new File(clientStorageDir, "multiPlayer");
         if (SINGLEPLAYER) serverSideDir = new File(clientStorageDir, "singlePlayer");
 
         SERVER_IP = SERVER_IP.replaceAll(" ", "_");
+        SERVER_IP = SERVER_IP.replaceAll("\\./([\\d.]+:\\d+)", "");
         SERVER_IP = SERVER_IP.toLowerCase();
 
-        serverWorldDir = new File(serverSideDir, ClientStorageClient.SERVER_IP);
+        File serverWorldDir = new File(serverSideDir, ClientStorageClient.SERVER_IP);
         locationsFile = new File(serverWorldDir, "locations.json");
 
         try {
             serverSideDir.mkdirs();
             serverWorldDir.mkdirs();
             if (!locationsFile.exists()) {
+                locationsFile.getParentFile().getParentFile().mkdirs();
                 locationsFile.getParentFile().mkdirs();
                 locationsFile.createNewFile();
                 JsonObject initialLocations = new JsonObject();
@@ -52,6 +53,7 @@ public class ModConfig {
 
     private static JsonObject locationFile() {
         try {
+            if (locationsFile == null) return null;
             if (!locationsFile.exists()) {
                 return new JsonObject();
             }
@@ -73,6 +75,7 @@ public class ModConfig {
     public static void addBlock(BlockPos blockPos, Block block, ItemStack heldItem) {
         isOrAddDir();
         JsonObject locations = locationFile();
+        if (locations == null) return;
 
         JsonArray dimensionArray = new JsonArray();
 
@@ -111,6 +114,7 @@ public class ModConfig {
     public static void removeBlock(BlockPos blockPos) {
         isOrAddDir();
         JsonObject locations = locationFile();
+        if (locations == null) return;
 
         JsonArray dimensionArray = new JsonArray();
 
@@ -147,6 +151,7 @@ public class ModConfig {
 
         isOrAddDir();
         JsonObject locations = locationFile();
+        if (locations == null) return null;
         locationFile(locations);
 
         JsonArray dimensionArray = new JsonArray();
