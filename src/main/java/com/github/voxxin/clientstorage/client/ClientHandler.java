@@ -26,10 +26,10 @@ public class ClientHandler {
         // Setting Which block it is!
 
         UseBlockCallback.EVENT.register(((player, world, hand, hitResult) -> {
-            if (!interactionKey.wasPressed()) return ActionResult.FAIL;
-
             if (hand == MAIN_HAND && hitResult.getType() == HitResult.Type.BLOCK) {
                 if (world.getBlockState(hitResult.getBlockPos()).isOf(Blocks.BARREL)) {
+                    if (!interactionKey.wasPressed()) return ActionResult.FAIL;
+
                     if (!player.getInventory().getMainHandStack().isEmpty()) {
                         ModConfig.addBlock(hitResult.getBlockPos(), world.getBlockState(hitResult.getBlockPos()).getBlock(), minecraft.player.getMainHandStack());
                     } else {
