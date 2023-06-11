@@ -13,13 +13,23 @@ public class ClientStorageKeybinds {
     public static final String CATEGORY = "key." +  "category." + MODID;
     public static final String INTERACTION_KEY = "key." + MODID + ".interact";
 
+    public static final String IMPORT_KEY = "key." + MODID + ".import";
+
     public static KeyBinding interactionKey;
+    public static KeyBinding importKey;
 
     public static void register() {
         interactionKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 INTERACTION_KEY,
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_B,
+                CATEGORY
+        ));
+
+        importKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                IMPORT_KEY,
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_Z,
                 CATEGORY
         ));
     }

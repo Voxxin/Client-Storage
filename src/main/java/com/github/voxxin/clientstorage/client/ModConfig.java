@@ -3,16 +3,22 @@ package com.github.voxxin.clientstorage.client;
 import com.google.gson.*;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.github.voxxin.clientstorage.client.ClientHandler.lastDrawnPos;
 import static com.github.voxxin.clientstorage.client.ClientStorageClient.*;
@@ -20,6 +26,7 @@ import static com.github.voxxin.clientstorage.client.ClientStorageClient.*;
 
 public class ModConfig {
     private static final File clientStorageDir = FabricLoader.getInstance().getConfigDir().resolve("client-storage").toFile();
+    private static final File importFolder = new File(clientStorageDir, "import");
     private static File locationsFile = null;
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -35,6 +42,8 @@ public class ModConfig {
         locationsFile = new File(serverWorldDir, "locations.json");
 
         try {
+            importFolder.mkdirs();
+
             serverSideDir.mkdirs();
             serverWorldDir.mkdirs();
             if (!locationsFile.exists()) {
@@ -45,8 +54,19 @@ public class ModConfig {
                 locationFile(initialLocations);
             }
 
+            File[] files = importFolder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile()) {
+                        importLocation(file);
+                        if (!file.delete()) {
+                            System.out.println("Failed to delete file: " + file.getName());
+                        }
+                    }
+                }
+            }
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -144,7 +164,6 @@ public class ModConfig {
         locationFile(locations);
     }
 
-
     public static ItemStack getBlock() {
         if (lastDrawnPos == null) return null;
         ItemStack itemStack = null;
@@ -176,5 +195,62 @@ public class ModConfig {
         }
 
         return itemStack;
+    }
+
+    public static void importLocation(File file) throws IOException {
+        JsonObject locations = locationFile();
+        if (locations == null) return;
+
+        Map<String, JsonArray> existingDimensions = new HashMap<>();
+
+        for (String jsonElement : locations.keySet()) {
+            existingDimensions.put(jsonElement, locations.getAsJsonArray(jsonElement));
+        }
+
+        if (!file.getName().endsWith(".json")) return;
+
+        FileReader fileReader = new FileReader(file);
+        JsonObject jsonedFile = gson.fromJson(fileReader, JsonObject.class);
+        fileReader.close();
+
+        JsonObject newFile = new JsonObject();
+
+        for (String newArrayDimension : jsonedFile.keySet()) {
+
+            JsonArray newDimensionArray = jsonedFile.getAsJsonArray(newArrayDimension);
+
+            if (existingDimensions.get(newArrayDimension) != null) {
+                for (JsonElement oldArrayElement : existingDimensions.get(newArrayDimension)) {
+                    for (JsonElement newArrayElement : newDimensionArray) {
+                        JsonElement newLoc = newArrayElement.getAsJsonObject().get("location");
+                        JsonElement oldLoc = oldArrayElement.getAsJsonObject().get("location");
+                        if (newLoc.equals(oldLoc)) return;
+                    }
+
+                    if (!newDimensionArray.contains(oldArrayElement)) newDimensionArray.add(oldArrayElement);
+                }
+            }
+
+            newFile.add(newArrayDimension, newDimensionArray);
+        }
+
+
+        locationFile(newFile);
+    }
+
+    public static void importScreen() {
+        try {
+            String osName = System.getProperty("os.name").toLowerCase();
+
+            if (osName.contains("win")) {
+                Runtime.getRuntime().exec("explorer.exe " + importFolder.getAbsolutePath());
+            } else if (osName.contains("mac")) {
+                Runtime.getRuntime().exec("open " + importFolder.getAbsolutePath());
+            } else {
+                Runtime.getRuntime().exec("xdg-open " + importFolder.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

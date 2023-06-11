@@ -11,6 +11,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
+import static com.github.voxxin.clientstorage.client.ClientStorageKeybinds.importKey;
 import static com.github.voxxin.clientstorage.client.ClientStorageKeybinds.interactionKey;
 import static com.github.voxxin.clientstorage.client.ClientStorageClient.SERVER_DIMENSION;
 import static net.minecraft.util.Hand.MAIN_HAND;
@@ -22,6 +23,10 @@ public class ClientHandler {
         minecraftInstance = minecraft;
         if (minecraft.world == null) return;
         SERVER_DIMENSION = String.valueOf(minecraftInstance.world.getDimensionKey().getValue());
+
+        if (importKey.wasPressed()) {
+            ModConfig.importScreen();
+        }
 
         // Setting Which block it is!
 
