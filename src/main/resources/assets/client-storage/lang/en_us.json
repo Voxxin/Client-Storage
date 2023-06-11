@@ -1,5 +1,7 @@
 {
   "key.category.client-storage": "Client Storage",
 
-  "key.client-storage.interact": "Interact"
+  "key.client-storage.interact": "Interact",
+  "key.client-storage.import": "Import"
+
 }
