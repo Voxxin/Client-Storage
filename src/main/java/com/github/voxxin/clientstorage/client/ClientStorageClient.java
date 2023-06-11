@@ -16,7 +16,6 @@ public class ClientStorageClient implements ClientModInitializer {
         ClientStorageKeybinds.register();
 
         ClientTickEvents.END_CLIENT_TICK.register(ClientHandler::onClientTick);
-        HudRenderCallback.EVENT.register(ClientHandler::onHudRenderer);
         ClientPlayConnectionEvents.JOIN.register(((handler, sender, client) -> {
             if (client.isInSingleplayer()) {
                 SERVER_IP = client.getServer().getSaveProperties().getLevelName();

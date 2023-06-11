@@ -16,9 +16,11 @@
       "com.github.voxxin.clientstorage.client.ClientStorageClient"
     ]
   },
+  "mixins": [
+    "client-storage.mixins.json"
+  ],
   "depends": {
-    "fabricloader": ">=${loader_version}",
-    "fabric": "*",
-    "minecraft": "${minecraft_version}"
+    "fabricloader": ">=0.14.10",
+    "fabric": "*"
   }
 }
