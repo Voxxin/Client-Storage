@@ -5,10 +5,6 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawableHelper;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -31,13 +27,14 @@ public class ClientHandler {
         UseBlockCallback.EVENT.register(((player, world, hand, hitResult) -> {
             if (hand == MAIN_HAND && hitResult.getType() == HitResult.Type.BLOCK) {
                 if (world.getBlockState(hitResult.getBlockPos()).isOf(Blocks.BARREL)) {
-                    if (!interactionKey.wasPressed()) return ActionResult.FAIL;
-                    if (!player.getInventory().getMainHandStack().isEmpty()) {
-                        ModConfig.addBlock(hitResult.getBlockPos(), world.getBlockState(hitResult.getBlockPos()).getBlock(), minecraft.player.getMainHandStack());
-                    } else {
-                        ModConfig.removeBlock(hitResult.getBlockPos());
+                    if (interactionKey.isPressed()) {
+                        if (!player.getInventory().getMainHandStack().isEmpty()) {
+                            ModConfig.addBlock(hitResult.getBlockPos(), world.getBlockState(hitResult.getBlockPos()).getBlock(), minecraft.player.getMainHandStack());
+                        } else {
+                            ModConfig.removeBlock(hitResult.getBlockPos());
+                        }
+                        return ActionResult.FAIL;
                     }
-                    return ActionResult.FAIL;
                 }
             }
             return ActionResult.PASS;
