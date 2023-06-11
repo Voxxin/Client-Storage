@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "client-storage",
+  "version": "${version}",
+  "name": "client-storage",
+  "description": "Client Storage",
+  "authors": ["ella"],
+  "contact": {
+    "repo": "https://github.com/voxxin/client-storage"
+  },
+  "license": "GPL-3.0",
+  "icon": "icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.github.voxxin.clientstorage.client.ClientStorageClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
