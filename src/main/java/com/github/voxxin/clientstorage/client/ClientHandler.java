@@ -11,6 +11,8 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.ArrayList;
+
 import static com.github.voxxin.clientstorage.client.ClientStorageKeybinds.importKey;
 import static com.github.voxxin.clientstorage.client.ClientStorageKeybinds.interactionKey;
 import static com.github.voxxin.clientstorage.client.ClientStorageClient.SERVER_DIMENSION;
@@ -35,7 +37,13 @@ public class ClientHandler {
                 if (world.getBlockState(hitResult.getBlockPos()).isOf(Blocks.BARREL)) {
                     if (interactionKey.isPressed()) {
                         if (!player.getInventory().getMainHandStack().isEmpty()) {
-                            ModConfig.addBlock(hitResult.getBlockPos(), world.getBlockState(hitResult.getBlockPos()).getBlock(), minecraft.player.getMainHandStack());
+
+                            ArrayList<ItemStack> itemsArray = new ArrayList<>();
+                            itemsArray.add(minecraft.player.getMainHandStack());
+
+                            if (!minecraft.player.getOffHandStack().isEmpty()) itemsArray.add(minecraft.player.getOffHandStack());
+
+                            ModConfig.addBlock(hitResult.getBlockPos(), world.getBlockState(hitResult.getBlockPos()).getBlock(), itemsArray);
                         } else {
                             ModConfig.removeBlock(hitResult.getBlockPos());
                         }
@@ -62,9 +70,10 @@ public class ClientHandler {
 
 
     private static void renderHeldItem(DrawContext drawContext) {
-        ItemStack item = ModConfig.getBlock();
+        ArrayList<ItemStack> item = ModConfig.getBlock();
 
-        if (item != null) {
+        assert item != null;
+        if (!item.isEmpty()) {
             int screenWidth = minecraftInstance.getWindow().getScaledWidth();
             int screenHeight = minecraftInstance.getWindow().getScaledHeight();
 
@@ -72,7 +81,14 @@ public class ClientHandler {
             int yPos = screenHeight / 2 - 8;
             yPos = yPos - 16;
 
-            drawContext.drawItem(item, xPos, yPos);
+            if (item.size() == 1) {
+                drawContext.drawItem(item.get(0), xPos, yPos);
+            } else {
+                int xPos0 = xPos - 8;
+                int xPos1 = xPos + 8;
+                drawContext.drawItem(item.get(0), xPos0, yPos);
+                drawContext.drawItem(item.get(1), xPos1, yPos);
+            }
         }
     }
 }

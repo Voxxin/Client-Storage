@@ -14,6 +14,7 @@ public class ClientStorageClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientStorageKeybinds.register();
+        //ModConfig.isOrAddDir();
 
         ClientTickEvents.END_CLIENT_TICK.register(ClientHandler::onClientTick);
         HudRenderCallback.EVENT.register(ClientHandler::onHudRenderer);
