@@ -28,8 +28,6 @@ public class ClientStorageClient implements ClientModInitializer {
             }
         }
 
-        MAP_IN_SLOT = true;
-
         ClientTickEvents.END_CLIENT_TICK.register(ClientHandler::onClientTick);
         ClientPlayConnectionEvents.JOIN.register(((handler, sender, client) -> {
             if (client.isInSingleplayer()) {
