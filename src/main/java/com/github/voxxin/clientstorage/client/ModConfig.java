@@ -1,10 +1,13 @@
 package com.github.voxxin.clientstorage.client;
 
 import com.google.gson.*;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.StringNbtReader;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -105,10 +108,16 @@ public class ModConfig {
         blockLoc.add("location", blockLocation);
         blockLoc.addProperty("type", block.getTranslationKey());
         blockLoc.addProperty("item", String.valueOf(Registries.ITEM.getId(heldItem.get(0).getItem())));
+        if (heldItem.get(0).hasNbt()) {
+            blockLoc.addProperty("item_nbt", String.valueOf(heldItem.get(0).getNbt()));
+        }
+
         if (heldItem.size() > 1) {
             blockLoc.addProperty("sec_item", String.valueOf(Registries.ITEM.getId(heldItem.get(1).getItem())));
+            blockLoc.addProperty("sec_item_nbt", String.valueOf(heldItem.get(1).getNbt()));
         } else {
             blockLoc.addProperty("sec_item", (String) null);
+            blockLoc.addProperty("sec_item_nbt", (String) null);
         }
 
         if (dimensionArray.contains(blockLoc)) return;
@@ -163,7 +172,7 @@ public class ModConfig {
         locationFile(locations);
     }
 
-    public static ArrayList<ItemStack> getBlock() {
+    public static ArrayList<ItemStack> getBlock() throws CommandSyntaxException {
         if (lastDrawnPos == null) return null;
         ArrayList<ItemStack> itemStack = new ArrayList<>();
 
@@ -189,10 +198,20 @@ public class ModConfig {
 
             if (blockLocation.equals(locationArray) && itemStack.isEmpty()) {
                 Item item = Registries.ITEM.get(Identifier.tryParse(blockPosObj.get("item").getAsString())).asItem();
-                itemStack.add(new ItemStack(item));
+
+                if (blockPosObj.get("item_nbt") != null && !blockPosObj.get("item_nbt").getAsString().equals("null")) {
+                    itemStack.add(new ItemStack(item));
+                    itemStack.get(0).setNbt(StringNbtReader.parse(blockPosObj.get("item_nbt").getAsString()));
+                } else itemStack.add(new ItemStack(item));
+
                 if (blockPosObj.get("sec_item") != null && !blockPosObj.get("sec_item").getAsString().equals("null")) {
+
                     Item sec_item = Registries.ITEM.get(Identifier.tryParse(blockPosObj.get("sec_item").getAsString())).asItem();
                     itemStack.add(new ItemStack(sec_item));
+
+                    if (blockPosObj.get("sec_item_nbt") != null && !blockPosObj.get("sec_item_nbt").getAsString().equals("null")) {
+                        itemStack.get(1).setNbt(StringNbtReader.parse(blockPosObj.get("sec_item_nbt").getAsString()));
+                    }
                 }
             }
         }

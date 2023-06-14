@@ -1,18 +1,26 @@
 package com.github.voxxin.clientstorage.client;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.*;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.item.map.MapState;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
 
+import static com.github.voxxin.clientstorage.client.ClientStorageClient.MAP_IN_SLOT;
 import static com.github.voxxin.clientstorage.client.ClientStorageKeybinds.importKey;
 import static com.github.voxxin.clientstorage.client.ClientStorageKeybinds.interactionKey;
 import static com.github.voxxin.clientstorage.client.ClientStorageClient.SERVER_DIMENSION;
@@ -56,20 +64,25 @@ public class ClientHandler {
     }
 
     public static void onHudRenderer(DrawContext drawContext, float v) {
-        if (minecraftInstance == null) return;
-        assert minecraftInstance.world != null;
+        try {
+            if (minecraftInstance == null) return;
+            assert minecraftInstance.world != null;
 
-        HitResult hitResult = minecraftInstance.crosshairTarget;
-        if (!(hitResult instanceof BlockHitResult)) return;
+            HitResult hitResult = minecraftInstance.crosshairTarget;
+            if (!(hitResult instanceof BlockHitResult)) return;
 
-        if (!(minecraftInstance.world.getBlockState(((BlockHitResult) hitResult).getBlockPos()).getBlock() instanceof BarrelBlock)) return;
-        lastDrawnPos = ((BlockHitResult) hitResult).getBlockPos();
+            if (!(minecraftInstance.world.getBlockState(((BlockHitResult) hitResult).getBlockPos()).getBlock() instanceof BarrelBlock))
+                return;
+            lastDrawnPos = ((BlockHitResult) hitResult).getBlockPos();
 
-        renderHeldItem(drawContext);
+            renderHeldItem(drawContext);
+        } catch (CommandSyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
-    private static void renderHeldItem(DrawContext drawContext) {
+    private static void renderHeldItem(DrawContext drawContext) throws CommandSyntaxException {
         ArrayList<ItemStack> item = ModConfig.getBlock();
 
         assert item != null;
@@ -81,14 +94,48 @@ public class ClientHandler {
             int yPos = screenHeight / 2 - 8;
             yPos = yPos - 16;
 
+
             if (item.size() == 1) {
-                drawContext.drawItem(item.get(0), xPos, yPos);
+                if (item.get(0).getItem().equals(Items.FILLED_MAP) && MAP_IN_SLOT) {
+                    renderMap(drawContext, item.get(0), xPos, yPos);
+                } else {
+                    drawContext.drawItem(item.get(0), xPos, yPos);
+                }
+
             } else {
+
                 int xPos0 = xPos - 8;
                 int xPos1 = xPos + 8;
-                drawContext.drawItem(item.get(0), xPos0, yPos);
-                drawContext.drawItem(item.get(1), xPos1, yPos);
+
+                if (item.get(0).getItem().equals(Items.FILLED_MAP) && MAP_IN_SLOT) {
+                    renderMap(drawContext, item.get(0), xPos0, yPos);
+                } else {
+                    drawContext.drawItem(item.get(0), xPos0, yPos);
+                }
+
+                if (item.get(1).getItem().equals(Items.FILLED_MAP) && MAP_IN_SLOT) {
+                    renderMap(drawContext, item.get(1), xPos1, yPos);
+                } else {
+                    drawContext.drawItem(item.get(1), xPos1, yPos);
+                }
+
             }
+        }
+    }
+
+    public static void renderMap(DrawContext drawContext, ItemStack stack, int x, int y) {
+        if (minecraftInstance.player == null) return;
+
+        Integer mapId = FilledMapItem.getMapId(stack);
+        MapState saveData = FilledMapItem.getMapState(mapId, minecraftInstance.player.getWorld());
+
+        if (mapId != null && saveData != null) {
+            VertexConsumerProvider bufferSource = drawContext.getVertexConsumers();
+            MatrixStack poseStack = new MatrixStack();
+            poseStack.translate(x, y, 0);
+            poseStack.scale(1 / 8F, 1 / 8F, 1);
+
+            minecraftInstance.gameRenderer.getMapRenderer().draw(poseStack, bufferSource, mapId, saveData, true, 0xF000D2);
         }
     }
 }
