@@ -14,6 +14,8 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.ArrayList;
+
 import static com.github.voxxin.clientstorage.client.ClientStorageKeybinds.importKey;
 import static com.github.voxxin.clientstorage.client.ClientStorageKeybinds.interactionKey;
 import static com.github.voxxin.clientstorage.client.ClientStorageClient.SERVER_DIMENSION;
@@ -39,7 +41,13 @@ public class ClientHandler {
                     if (interactionKey.isPressed()) {
 
                         if (!player.getInventory().getMainHandStack().isEmpty()) {
-                            ModConfig.addBlock(hitResult.getBlockPos(), world.getBlockState(hitResult.getBlockPos()).getBlock(), minecraft.player.getMainHandStack());
+                            ArrayList<ItemStack> itemStackArrayList = new ArrayList<>();
+                            assert minecraft.player != null;
+                            itemStackArrayList.add(minecraft.player.getMainHandStack());
+                            if (!minecraft.player.getOffHandStack().isEmpty()) itemStackArrayList.add(minecraft.player.getOffHandStack());
+
+
+                            ModConfig.addBlock(hitResult.getBlockPos(), world.getBlockState(hitResult.getBlockPos()).getBlock(), itemStackArrayList);
                         } else {
                             ModConfig.removeBlock(hitResult.getBlockPos());
                         }

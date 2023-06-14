@@ -1,20 +1,17 @@
 package com.github.voxxin.clientstorage.client;
 
 import com.google.gson.*;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.StringNbtReader;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +27,7 @@ public class ModConfig {
     private static File locationsFile = null;
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    private static void isOrAddDir() {
+    public static void isOrAddDir() {
         File serverSideDir = new File(clientStorageDir, "multiPlayer");
         if (SINGLEPLAYER) serverSideDir = new File(clientStorageDir, "singlePlayer");
 
@@ -92,7 +89,7 @@ public class ModConfig {
         }
     }
 
-    public static void addBlock(BlockPos blockPos, Block block, ItemStack heldItem) {
+    public static void addBlock(BlockPos blockPos, Block block, ArrayList<ItemStack> heldItem) {
         isOrAddDir();
         JsonObject locations = locationFile();
         if (locations == null) return;
@@ -110,7 +107,18 @@ public class ModConfig {
 
         blockLoc.add("location", blockLocation);
         blockLoc.addProperty("type", block.getTranslationKey());
-        blockLoc.addProperty("item", String.valueOf(Registries.ITEM.getId(heldItem.getItem())));
+        blockLoc.addProperty("item", String.valueOf(Registries.ITEM.getId(heldItem.get(0).getItem())));
+        if (heldItem.get(0).hasNbt()) {
+            blockLoc.addProperty("item_nbt", String.valueOf(heldItem.get(0).getNbt()));
+        }
+
+        if (heldItem.size() > 1) {
+            blockLoc.addProperty("sec_item", String.valueOf(Registries.ITEM.getId(heldItem.get(1).getItem())));
+            blockLoc.addProperty("sec_item_nbt", String.valueOf(heldItem.get(1).getNbt()));
+        } else {
+            blockLoc.addProperty("sec_item", (String) null);
+            blockLoc.addProperty("sec_item_nbt", (String) null);
+        }
 
         if (dimensionArray.contains(blockLoc)) return;
 
@@ -164,9 +172,9 @@ public class ModConfig {
         locationFile(locations);
     }
 
-    public static ItemStack getBlock() {
+    public static ArrayList<ItemStack> getBlock() throws CommandSyntaxException {
         if (lastDrawnPos == null) return null;
-        ItemStack itemStack = null;
+        ArrayList<ItemStack> itemStack = new ArrayList<>();
 
         isOrAddDir();
         JsonObject locations = locationFile();
@@ -188,9 +196,23 @@ public class ModConfig {
             JsonObject blockPosObj = blockPosObj0.getAsJsonObject();
             JsonArray locationArray = blockPosObj.get("location").getAsJsonArray();
 
-            if (blockLocation.equals(locationArray) && itemStack == null) {
+            if (blockLocation.equals(locationArray) && itemStack.isEmpty()) {
                 Item item = Registries.ITEM.get(Identifier.tryParse(blockPosObj.get("item").getAsString())).asItem();
-                itemStack = new ItemStack(item);
+
+                if (blockPosObj.get("item_nbt") != null && !blockPosObj.get("item_nbt").getAsString().equals("null")) {
+                    itemStack.add(new ItemStack(item));
+                    itemStack.get(0).setNbt(StringNbtReader.parse(blockPosObj.get("item_nbt").getAsString()));
+                } else itemStack.add(new ItemStack(item));
+
+                if (blockPosObj.get("sec_item") != null && !blockPosObj.get("sec_item").getAsString().equals("null")) {
+
+                    Item sec_item = Registries.ITEM.get(Identifier.tryParse(blockPosObj.get("sec_item").getAsString())).asItem();
+                    itemStack.add(new ItemStack(sec_item));
+
+                    if (blockPosObj.get("sec_item_nbt") != null && !blockPosObj.get("sec_item_nbt").getAsString().equals("null")) {
+                        itemStack.get(1).setNbt(StringNbtReader.parse(blockPosObj.get("sec_item_nbt").getAsString()));
+                    }
+                }
             }
         }
 
@@ -198,20 +220,28 @@ public class ModConfig {
     }
 
     public static void importLocation(File file) throws IOException {
+        if (!file.getName().endsWith(".json")) return;
+
+        FileReader fileReader = new FileReader(file);
+        JsonObject jsonedFile = gson.fromJson(fileReader, JsonObject.class);
+        fileReader.close();
+
         JsonObject locations = locationFile();
-        if (locations == null) return;
+        if (locations == null) {
+            locationFile(jsonedFile);
+            return;
+        }
+
+        if (file.getName().equals("replace.json")) {
+            locationFile(jsonedFile);
+            return;
+        }
 
         Map<String, JsonArray> existingDimensions = new HashMap<>();
 
         for (String jsonElement : locations.keySet()) {
             existingDimensions.put(jsonElement, locations.getAsJsonArray(jsonElement));
         }
-
-        if (!file.getName().endsWith(".json")) return;
-
-        FileReader fileReader = new FileReader(file);
-        JsonObject jsonedFile = gson.fromJson(fileReader, JsonObject.class);
-        fileReader.close();
 
         JsonObject newFile = new JsonObject();
 
